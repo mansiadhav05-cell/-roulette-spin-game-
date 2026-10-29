@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#071b16">
+<title>Roulette Spin — Number Spinner</title>
+<style>
+  :root { --gold:#f6cf73; --gold2:#b77b22; --felt:#07513c; --felt2:#032d23; --panel:#0c251f; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body {
+    margin:0; min-height:100vh; color:#fff5dc; font-family:system-ui,-apple-system,Segoe UI,sans-serif;
+    background:radial-gradient(ellipse at 50% 10%,#174b38 0,#091f19 48%,#030b09 100%);
+    display:flex; justify-content:center; padding:18px 12px 28px;
+  }
+  .app { width:min(100%,520px); }
+  header { text-align:center; margin:3px 0 15px; }
+  .eyebrow { color:#a8d5b8; font-size:11px; letter-spacing:3px; text-transform:uppercase; }
+  h1 { margin:5px 0 4px; font-size:clamp(26px,7vw,36px); line-height:1.1; color:var(--gold); text-shadow:0 2px 0 #6d4311,0 5px 18px #000; }
+  .subtitle { color:#c1d5c8; font-size:13px; }
+  .scorebar { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:14px 0; }
+  .stat { padding:12px; border:1px solid #a87a35; border-radius:14px; text-align:center; background:linear-gradient(145deg,#18382b,#071a14); box-shadow:0 6px 14px #0005,inset 0 1px #ffffff12; }
+  .stat small { display:block; font-size:11px; color:#b5c9bb; letter-spacing:1px; }
+  .stat strong { display:block; color:var(--gold); font-size:24px; font-variant-numeric:tabular-nums; }
+  .wheel-stage { position:relative; width:min(90vw,390px); aspect-ratio:1; margin:4px auto 17px; filter:drop-shadow(0 17px 16px #0009); }
+  .wheel-frame {
+    position:absolute; inset:0; border-radius:50%; padding:10px;
+    background:conic-gradient(from 0deg,#5b3514,#f9d77b,#8b5b1d,#ffedaa,#7b4c18,#e6b650,#5b3514);
+    box-shadow:inset 0 0 0 3px #43250e,inset 0 0 0 6px #f9dfa0,0 4px 0 #39210d;
+  }
+  .wheel-inner { width:100%;height:100%; border-radius:50%; padding:8px; background:radial-gradient(circle,#b87d28 0,#4b2b12 74%,#1b1009 100%); box-shadow:inset 0 0 13px #000; }
+  #wheel { display:block; width:100%;height:100%; border-radius:50%; transform:rotate(0deg); }
+  .pointer {
+    position:absolute; z-index:3; top:-3px; left:50%; transform:translateX(-50%);
+    width:0;height:0; border-left:15px solid transparent; border-right:15px solid transparent;
+    border-top:31px solid #fff0b0; filter:drop-shadow(0 3px 2px #000b);
+  }
+  .hub {
+    position:absolute; left:50%;top:50%;transform:translate(-50%,-50%);
+    width:24%;aspect-ratio:1;border-radius:50%;border:4px solid #f6d47f;
+    background:radial-gradient(circle at 35% 25%,#fff1b5,#b77a22 42%,#54300d 78%,#e2ad46);
+    box-shadow:0 3px 7px #000b,inset 0 0 0 3px #7a4a13; display:grid;place-items:center;
+    color:#3a210b;font-weight:1000;font-size:clamp(12px,4vw,19px);text-shadow:0 1px #fff7;
+  }
+  .result { background:linear-gradient(145deg,#12392b,#081b15); border:1px solid #315d42; border-radius:17px; padding:14px; text-align:center; box-shadow:inset 0 1px #ffffff0d; }
+  .result-label { color:#b9d4c1; font-size:11px; letter-spacing:2px; }
+  .result-number { font-size:43px; line-height:1.15; font-weight:900; color:var(--gold); text-shadow:0 3px 0 #57380f; }
+  .result-color { font-size:13px; color:#d4e2d7; min-height:20px; }
+  .actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:13px; }
+  button { font:inherit; cursor:pointer; border:0; touch-action:manipulation; }
+  .spin {
+    grid-column:1/-1; min-height:54px; border-radius:15px; color:#30200a; font-weight:900; font-size:17px; letter-spacing:1px;
+    background:linear-gradient(180deg,#ffe8a0,#e7b94f 54%,#b87a24); box-shadow:0 5px 0 #6c4315,0 9px 18px #0006,inset 0 1px #fff9;
+  }
+  .spin:active { transform:translateY(3px); box-shadow:0 2px 0 #6c4315; }
+  .secondary { padding:12px 8px; border-radius:12px; border:1px solid #5b8066; background:#102d22; color:#e5f1e8; font-size:13px; }
+  button:disabled { opacity:.55; cursor:wait; }
+  .history { margin-top:16px; padding:13px; background:#081a14d9; border:1px solid #294735; border-radius:15px; }
+  .history-head { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px; }
+  .history h2 { margin:0; font-size:14px; color:var(--gold); }
+  .history p { margin:0; color:#9fb8a7; font-size:11px; }
+  .chips { display:flex; flex-wrap:wrap; gap:7px; min-height:32px; }
+  .chip { width:31px;height:31px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;border:1px solid #ffffff36;box-shadow:inset 0 1px #ffffff30,0 2px 3px #0007; }
+  .red { background:linear-gradient(145deg,#f34848,#8e1018); }
+  .black { background:linear-gradient(145deg,#48514e,#070b0a); }
+  .green { background:linear-gradient(145deg,#39b879,#07512c); }
+  .note { margin:13px 4px 0; text-align:center; color:#94b09d; font-size:11px; line-height:1.5; }
+  .message { margin-top:8px; color:#f7d986; min-height:20px; text-align:center; font-size:13px; }
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior:auto; } }
+</style>
+</head>
+<body>
+<main class="app">
+  <header>
+    <div class="eyebrow">ARCADE • NUMBER SPINNER</div>
+    <h1>ROULETTE SPIN</h1>
+    <div class="subtitle">व्हील फिरवा • नंबर शोधा • स्कोअर वाढवा</div>
+  </header>
+
+  <section class="scorebar" aria-label="गेम आकडेवारी">
+    <div class="stat"><small>तुझा स्कोअर</small><strong id="score">0</strong></div>
+    <div class="stat"><small>एकूण स्पिन</small><strong id="spins">0</strong></div>
+  </section>
+
+  <section class="wheel-stage" aria-label="फिरणारे roulette व्हील">
+    <div class="pointer"></div>
+    <div class="wheel-frame"><div class="wheel-inner"><canvas id="wheel" width="700" height="700" aria-label="नंबरचे व्हील"></canvas></div></div>
+    <div class="hub">SPIN</div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="result-label">शेवटचा निकाल</div>
+    <div class="result-number" id="resultNumber">—</div>
+    <div class="result-color" id="resultColor">Spin दाबून सुरुवात कर!</div>
+  </section>
+
+  <div class="actions">
+    <button class="spin" id="spinBtn">🎡 SPIN करा</button>
+    <button class="secondary" id="bonusBtn">+ 10 स्कोअर</button>
+    <button class="secondary" id="resetBtn">रीसेट करा</button>
+  </div>
+  <div class="message" id="message" role="status">तयार आहे!</div>
+
+  <section class="history">
+    <div class="history-head"><h2>अलीकडील निकाल</h2><p>शेवटचे 10 स्पिन</p></div>
+    <div class="chips" id="history"><span style="color:#91aa99;font-size:12px">अजून निकाल नाहीत.</span></div>
+  </section>
+  <p class="note">हा केवळ मनोरंजनासाठी नंबर-स्पिनिंग गेम आहे. स्कोअरला पैशांचे मूल्य नाही. यात बेटिंग किंवा खरे पैसे नाहीत.</p>
+</main>
+<script>
+(() => {
+  const canvas = document.getElementById('wheel');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('score');
+  const spinsEl = document.getElementById('spins');
+  const resultNumber = document.getElementById('resultNumber');
+  const resultColor = document.getElementById('resultColor');
+  const historyEl = document.getElementById('history');
+  const message = document.getElementById('message');
+  const spinBtn = document.getElementById('spinBtn');
+  const bonusBtn = document.getElementById('bonusBtn');
+  const resetBtn = document.getElementById('resetBtn');
+
+  // युरोपियन Roulette क्रम; येथे फक्त सजावटीचा नंबर-स्पिनर आहे.
+  const numbers = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
+  const reds = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
+  let rotation = 0, spinning = false, score = 0, spinCount = 0, recent = [];
+
+  function colorFor(n) { return n === 0 ? 'green' : reds.has(n) ? 'red' : 'black'; }
+  function colorName(n) { return n === 0 ? 'हिरवा' : reds.has(n) ? 'लाल' : 'काळा'; }
+  function paintWheel() {
+    const w = canvas.width, c = w/2, r = w/2 - 8, arc = Math.PI*2/numbers.length;
+    ctx.clearRect(0,0,w,w);
+    // बाहेरील मेटल रिंग
+    const metal = ctx.createRadialGradient(c*0.75,c*0.6,20,c,c,r);
+    metal.addColorStop(0,'#ffe9a0'); metal.addColorStop(.55,'#b47a26'); metal.addColorStop(.8,'#f6d778'); metal.addColorStop(1,'#70400f');
+    ctx.beginPath(); ctx.arc(c,c,r,0,Math.PI*2); ctx.fillStyle=metal; ctx.fill();
+    ctx.save(); ctx.translate(c,c);
+    const offset = -Math.PI/2;
+    numbers.forEach((n,i) => {
+      const start = offset + i*arc, end = start+arc;
+      ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,r-18,start,end); ctx.closePath();
+      const g = ctx.createLinearGradient(Math.cos(start)*r,Math.sin(start)*r,Math.cos(end)*r,Math.sin(end)*r);
+      if(n===0){g.addColorStop(0,'#24a86a');g.addColorStop(1,'#064c2e');}
+      else if(reds.has(n)){g.addColorStop(0,'#fa5555');g.addColorStop(1,'#780d16');}
+      else {g.addColorStop(0,'#4c5551');g.addColorStop(1,'#080c0b');}
+      ctx.fillStyle=g;ctx.fill();ctx.strokeStyle='#f3d38a';ctx.lineWidth=2;ctx.stroke();
+      // क्रमांक बाहेरील कडेवर, स्क्रीनवर सहज वाचता येतील
+      ctx.save();
+      const mid=start+arc/2;
+      ctx.rotate(mid);
+      ctx.translate(r-65,0);
+      ctx.rotate(Math.PI/2);
+      ctx.fillStyle='#fff6db';
+      ctx.font='bold 24px system-ui, sans-serif';
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.shadowColor='#000';ctx.shadowBlur=4;
+      ctx.fillText(String(n),0,0);
+      ctx.restore();
+    });
+    // आतील सजावटीच्या रिंग
+    ctx.beginPath();ctx.arc(0,0,r*.57,0,Math.PI*2);
+    const inner=ctx.createRadialGradient(-35,-45,10,0,0,r*.57);
+    inner.addColorStop(0,'#f8df8b');inner.addColorStop(.45,'#a96b1e');inner.addColorStop(1,'#4d2b0d');
+    ctx.fillStyle=inner;ctx.fill();ctx.lineWidth=8;ctx.strokeStyle='#f9d982';ctx.stroke();
+    ctx.beginPath();ctx.arc(0,0,r*.49,0,Math.PI*2);ctx.strokeStyle='#f8e5a6';ctx.lineWidth=3;ctx.stroke();
+    ctx.restore();
+  }
+  function updateStats() { scoreEl.textContent=score; spinsEl.textContent=spinCount; }
+  function showHistory() {
+    historyEl.innerHTML='';
+    if(!recent.length){historyEl.innerHTML='<span style="color:#91aa99;font-size:12px">अजून निकाल नाहीत.</span>';return;}
+    recent.forEach(n=>{
+      const chip=document.createElement('span');
+      chip.className='chip '+colorFor(n);chip.textContent=n;chip.title=colorName(n);
+      historyEl.appendChild(chip);
+    });
+  }
+  function spin() {
+    if(spinning) return;
+    spinning=true;spinBtn.disabled=true;bonusBtn.disabled=true;message.textContent='व्हील फिरत आहे…';
+    const result=numbers[Math.floor(Math.random()*numbers.length)];
+    const index=numbers.indexOf(result), arc=360/numbers.length;
+    // कૅનવાસની શૂન્ય સ્થિતિમાં નંબરનું કેન્દ્ર ઉપર છે. Pointer ઉપર જ રહે છે.
+    const targetCenter = (index+0.5)*arc;
+    const currentMod = ((rotation%360)+360)%360;
+    const desiredMod = (360-targetCenter+360)%360;
+    const delta = (desiredMod-currentMod+360)%360;
+    const extraTurns = 360*(5+Math.floor(Math.random()*3));
+    const start=rotation, end=rotation+extraTurns+delta, duration=4200+Math.random()*700, began=performance.now();
+    function frame(now) {
+      const t=Math.min(1,(now-began)/duration);
+      const eased=1-Math.pow(1-t,4);
+      rotation=start+(end-start)*eased;
+      canvas.style.transform='rotate('+rotation+'deg)';
+      if(t<1){requestAnimationFrame(frame);return;}
+      rotation=((end%360)+360)%360;
+      canvas.style.transform='rotate('+rotation+'deg)';
+      spinning=false;spinBtn.disabled=false;bonusBtn.disabled=false;
+      spinCount++;score+=10;
+      resultNumber.textContent=result;
+      resultNumber.style.color=result===0?'#69e5a2':reds.has(result)?'#ff7b7b':'#f6cf73';
+      resultColor.textContent=colorName(result)+' नंबर • +10 स्कोअर';
+      recent.unshift(result);recent=recent.slice(0,10);showHistory();updateStats();
+      message.textContent='छान! पुन्हा स्पिन करून पाहा.';
+    }
+    requestAnimationFrame(frame);
+  }
+  spinBtn.addEventListener('click',spin);
+  bonusBtn.addEventListener('click',()=>{ if(!spinning){score+=10;updateStats();message.textContent='+10 स्कोअर मिळाला!';} });
+  resetBtn.addEventListener('click',()=>{
+    if(spinning)return;
+    score=0;spinCount=0;recent=[];rotation=0;canvas.style.transform='rotate(0deg)';
+    resultNumber.textContent='—';resultNumber.style.color='';resultColor.textContent='Spin दाबून सुरुवात कर!';
+    updateStats();showHistory();message.textContent='स्कोअर रीसेट झाला.';
+  });
+  paintWheel();updateStats();showHistory();
+})();
+</script>
+</body>
+</html>
